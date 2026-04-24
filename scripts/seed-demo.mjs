@@ -1,10 +1,20 @@
 import path from "node:path";
-import dotenv from "dotenv";
 import bcrypt from "bcryptjs";
 import mysql from "mysql2/promise";
 
-dotenv.config({ path: path.join(process.cwd(), ".env.local") });
-dotenv.config();
+async function loadEnvironment() {
+  try {
+    const dotenv = await import("dotenv");
+    dotenv.default.config({ path: path.join(process.cwd(), ".env.local") });
+    dotenv.default.config();
+  } catch (error) {
+    if (error?.code !== "ERR_MODULE_NOT_FOUND") {
+      throw error;
+    }
+  }
+}
+
+await loadEnvironment();
 
 const connection = await mysql.createConnection({
   host: process.env.DB_HOST ?? "127.0.0.1",

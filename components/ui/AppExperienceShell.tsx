@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { BrandLogo } from "@/components/brand/BrandLogo";
 
@@ -15,50 +15,77 @@ function ToothBrushLoader() {
   );
 }
 
-export function AppExperienceShell({ children }: { children: React.ReactNode }) {
+export function AppExperienceShell({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   const pathname = usePathname();
-  const [showSplash, setShowSplash] = useState(true);
+  const [showSplash, setShowSplash] = useState(false);
   const [showTransition, setShowTransition] = useState(false);
 
+  const firstRender = useRef(true);
+
   useEffect(() => {
-    const splashTimer = window.setTimeout(() => setShowSplash(false), 1100);
+    const splashTimer = window.setTimeout(() => {
+      setShowSplash(false);
+    }, 1100);
+
     return () => window.clearTimeout(splashTimer);
   }, []);
 
   useEffect(() => {
-    if (showSplash) {
+    if (showSplash) return;
+
+    if (firstRender.current) {
+      firstRender.current = false;
       return;
     }
 
     setShowTransition(true);
-    const timer = window.setTimeout(() => setShowTransition(false), 520);
+
+    const timer = window.setTimeout(() => {
+      setShowTransition(false);
+    }, 520);
+
     return () => window.clearTimeout(timer);
   }, [pathname, showSplash]);
 
+  const isLoading = showSplash || showTransition;
+
   return (
     <>
-      {(showSplash || showTransition) && (
-        <div
-          className={`pointer-events-none fixed inset-0 z-[100] flex items-center justify-center bg-[radial-gradient(circle_at_top,rgba(140,103,214,0.2),transparent_42%),linear-gradient(180deg,rgba(251,249,255,0.95),rgba(242,235,252,0.96))] px-6 transition-opacity duration-500 ${showSplash || showTransition ? "opacity-100" : "opacity-0"}`}
-        >
+      {isLoading && (
+        <div className="pointer-events-none fixed inset-0 z-[100] flex items-center justify-center bg-[radial-gradient(circle_at_top,rgba(140,103,214,0.2),transparent_42%),linear-gradient(180deg,rgba(251,249,255,0.95),rgba(242,235,252,0.96))] px-6 transition-opacity duration-500 opacity-100">
           <div className="glass-panel flex w-full max-w-sm flex-col items-center gap-5 px-8 py-10 text-center">
             <BrandLogo size="lg" animated />
+
             <div className="space-y-2">
               <p className="text-xs font-bold uppercase tracking-[0.28em] text-violet-600">
                 L&A Dental
               </p>
+
               <h2 className="text-2xl font-black text-slate-900">
-                Cargando una experiencia mas humana
+                Cargando una experiencia más humana
               </h2>
+
               <p className="text-sm leading-6 text-slate-600">
-                Estamos preparando tu feed clinico, agenda y mensajes.
+                Estamos preparando tu feed clínico, agenda y mensajes.
               </p>
             </div>
+
             <ToothBrushLoader />
           </div>
         </div>
       )}
-      <div className={`transition-all duration-500 ${showTransition ? "scale-[0.99] opacity-90 blur-[1px]" : "scale-100 opacity-100 blur-0"}`}>
+
+      <div
+        className={`transition-all duration-500 ${
+          showTransition
+            ? "scale-[0.99] opacity-90 blur-[1px]"
+            : "scale-100 opacity-100 blur-0"
+        }`}
+      >
         {children}
       </div>
     </>

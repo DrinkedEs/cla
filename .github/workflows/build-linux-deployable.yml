@@ -37,13 +37,23 @@ jobs:
           rm -rf deploy-bundle
           mkdir -p deploy-bundle
 
-          for dir in app components data database lib public scripts .next; do
+          mkdir -p deploy-bundle/.next
+
+          for dir in public scripts database; do
             if [ -d "$dir" ]; then
               cp -R "$dir" "deploy-bundle/$dir"
             fi
           done
 
-          for file in package.json package-lock.json next.config.ts next-env.d.ts postcss.config.mjs tailwind.config.ts tsconfig.json .env.example README.md; do
+          if [ -d ".next/standalone" ]; then
+            cp -R .next/standalone/. deploy-bundle/
+          fi
+
+          if [ -d ".next/static" ]; then
+            cp -R .next/static deploy-bundle/.next/static
+          fi
+
+          for file in package.json package-lock.json .env.example README.md; do
             if [ -f "$file" ]; then
               cp "$file" "deploy-bundle/$file"
             fi

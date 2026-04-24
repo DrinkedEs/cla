@@ -37,24 +37,17 @@ jobs:
           rm -rf deploy-bundle
           mkdir -p deploy-bundle
 
-          cp -R app deploy-bundle/app
-          cp -R components deploy-bundle/components
-          cp -R data deploy-bundle/data
-          cp -R database deploy-bundle/database
-          cp -R lib deploy-bundle/lib
-          cp -R public deploy-bundle/public
-          cp -R scripts deploy-bundle/scripts
-          cp -R .next deploy-bundle/.next
+          for dir in app components data database lib public scripts .next; do
+            if [ -d "$dir" ]; then
+              cp -R "$dir" "deploy-bundle/$dir"
+            fi
+          done
 
-          cp package.json deploy-bundle/package.json
-          cp package-lock.json deploy-bundle/package-lock.json
-          cp next.config.ts deploy-bundle/next.config.ts
-          cp next-env.d.ts deploy-bundle/next-env.d.ts
-          cp postcss.config.mjs deploy-bundle/postcss.config.mjs
-          cp tailwind.config.ts deploy-bundle/tailwind.config.ts
-          cp tsconfig.json deploy-bundle/tsconfig.json
-          cp .env.example deploy-bundle/.env.example
-          cp README.md deploy-bundle/README.md
+          for file in package.json package-lock.json next.config.ts next-env.d.ts postcss.config.mjs tailwind.config.ts tsconfig.json .env.example README.md; do
+            if [ -f "$file" ]; then
+              cp "$file" "deploy-bundle/$file"
+            fi
+          done
 
           cd deploy-bundle
           zip -r ../alwaysdata-deploy-linux.zip .

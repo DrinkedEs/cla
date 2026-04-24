@@ -17,11 +17,15 @@ App web mobile-first para L&A con autenticacion real, MySQL local y dashboards p
 - Registro de `paciente` con datos basicos y perfil clinico
 - Registro de `doctor` con CV PDF obligatorio, fotos opcionales y servicio inicial obligatorio
 - Login/logout real con redireccion por rol
-- Dashboard protegido para paciente
-- Dashboard protegido para doctor
+- Dashboard protegido para paciente con feed, agenda, mensajes e historial
+- Dashboard protegido para doctor con feed, agenda, mensajeria e historial clinico
 - CRUD propio de cuenta para ambos roles
 - CRUD completo de servicios para doctor
 - Alta y baja de fotos del perfil del doctor
+- Publicaciones persistentes para el feed del doctor
+- Agenda persistente entre pacientes y doctores
+- Conversaciones y mensajes persistentes
+- Expedientes e intervenciones clinicas persistentes
 - Catalogo publico de servicios y perfiles conectado a MySQL
 
 ## Modelo de datos
@@ -33,6 +37,15 @@ App web mobile-first para L&A con autenticacion real, MySQL local y dashboards p
 - `doctor_photos`
 - `doctor_services`
 - `file_assets`
+- `doctor_posts`
+- `post_reactions`
+- `appointments`
+- `appointment_status_history`
+- `conversations`
+- `conversation_members`
+- `messages`
+- `clinical_records`
+- `clinical_record_entries`
 
 El SQL base vive en [database/schema.sql](/C:/Users/jackm/Desktop/CLA/database/schema.sql:1).
 
@@ -70,6 +83,7 @@ npm run build
 npm run lint
 npm run db:init
 npm run db:backfill-assets
+npm run db:seed-demo
 ```
 
 ## Flujo de base de datos local
@@ -82,6 +96,8 @@ npm run db:backfill-assets
 ## Despliegue en AlwaysData
 
 Esta app se despliega como sitio `Node.js`, no como sitio estatico: usa rutas server-side, sesiones por cookie y MariaDB/MySQL para autenticacion, perfiles, servicios y archivos.
+
+La salida de produccion usa `output: "standalone"` en [next.config.ts](/C:/Users/jackm/Desktop/CLA/next.config.ts:1), y el artifact Linux se genera con [build-linux-deployable.yml](/C:/Users/jackm/Desktop/CLA/.github/workflows/build-linux-deployable.yml:1).
 
 ### Requisitos recomendados
 
@@ -104,44 +120,97 @@ APP_BASE_URL=https://[account].alwaysdata.net
 SESSION_MAX_AGE_DAYS=14
 ```
 
-### Flujo manual por SSH
+### Flujo real que funciono
 
-1. En AlwaysData activa SSH para tu cuenta.
-2. En `Databases > MySQL` crea la base y un usuario con permisos completos sobre esa base.
-3. En `Web > Sites` crea un sitio de tipo `Node.js` con la direccion `[account].alwaysdata.net`.
-4. Activa `Force HTTPS`.
-5. Define como directorio de trabajo algo como `$HOME/www/la-dental-app`.
-6. Sube el proyecto al servidor sin `node_modules`, `.next`, `.env.local`, logs locales ni caches.
-7. En SSH entra al proyecto e instala dependencias:
+AlwaysData puede matar `npm run build`, `npm install` o la descarga de `swc` por memoria/cuota. La ruta estable fue:
+
+1. Subir el repo a GitHub.
+2. Ejecutar el workflow `Build Linux Deployable` en GitHub Actions.
+3. Descargar el artifact Linux `alwaysdata-deploy-linux.tar.gz`.
+4. Subir ese `tar.gz` por SSH/SCP a una carpeta limpia del servidor, por ejemplo `$HOME/www/la-dental-app-v5`.
+5. Extraer el artifact y arrancar la salida `standalone` directamente con `node server.js`.
+
+### Build Linux con GitHub Actions
+
+1. Haz push del repo a GitHub.
+2. En `Actions`, corre `Build Linux Deployable`.
+3. Descarga el artifact `alwaysdata-deploy-linux`.
+4. Extrae el artifact descargado en tu PC si viene envuelto en `.zip`.
+5. Toma el archivo `alwaysdata-deploy-linux.tar.gz` y subelo al servidor.
+
+### Subida por SSH/SCP
+
+Ejemplo desde Windows:
 
 ```bash
-cd $HOME/www/la-dental-app
-npm install
+scp C:\Users\jackm\Downloads\alwaysdata-deploy-linux.tar.gz [account]@ssh-[account].alwaysdata.net:~/www/la-dental-app-v5/
 ```
 
-8. Crea `.env.local` con las variables de produccion.
-9. Inicializa la base y genera el build:
+En el servidor:
+
+```bash
+mkdir -p $HOME/www/la-dental-app-v5
+cd $HOME/www/la-dental-app-v5
+tar -xzf alwaysdata-deploy-linux.tar.gz
+rm -f alwaysdata-deploy-linux.tar.gz
+```
+
+Despues crea `.env.local` y ejecuta:
 
 ```bash
 npm run db:init
-npm run build
 ```
 
-10. En la configuracion del sitio Node.js usa este comando de arranque:
+No hace falta correr `npm run build` en el servidor.
+
+### Configuracion del sitio en AlwaysData
+
+En `Web > Sites`:
+
+- `Type`: `Node.js`
+- `Working directory`: `/home/[account]/www/la-dental-app-v5`
+- `Command`: `node server.js`
+- `Node.js version`: `22`
+
+En `Environment` define estas variables:
+
+```env
+HOSTNAME=::
+PORT=8100
+DB_HOST=mysql-[account].alwaysdata.net
+DB_PORT=3306
+DB_USER=[usuario_mysql]
+DB_PASSWORD=[password_mysql]
+DB_NAME=[base_creada_en_alwaysdata]
+APP_BASE_URL=https://[account].alwaysdata.net
+SESSION_MAX_AGE_DAYS=14
+NODE_ENV=production
+```
+
+Importante:
+
+- No pongas `HOSTNAME=$IP` en `Environment`; AlwaysData no expande esa variable ahi y el proceso falla con `ENOTFOUND $IP`.
+- En este proyecto funciono `HOSTNAME=::` y `PORT=8100`.
+- El proceso correcto de arranque es `node server.js`, no `npm run start`.
+- Si quieres validar manualmente por SSH, puedes probar:
 
 ```bash
-npm run start -- --hostname "$IP" --port "$PORT"
+cd $HOME/www/la-dental-app-v5
+export HOSTNAME="::"
+export PORT="8100"
+node server.js
 ```
-
-AlwaysData exige que la app escuche exactamente en el `IP` y `PORT` asignados al sitio.
 
 ### Notas de despliegue
 
 - `npm run db:init` trabaja contra la base indicada en `DB_NAME`; no depende de un nombre fijo.
+- Si quieres poblar una demo funcional con feed, citas, mensajes e historial, ejecuta `npm run db:seed-demo` despues de `npm run db:init`.
 - En AlwaysData lo normal es crear la base primero desde el panel. Si localmente usas un usuario con permisos, el script tambien puede crear la base faltante de forma automatica.
 - Los CV y fotos nuevos se guardan en `file_assets` dentro de MariaDB/MySQL, asi que no necesitas disco compartido para los uploads en produccion.
 - Si vienes de una version antigua que aun referenciaba archivos en disco, sube esos archivos historicos y luego ejecuta `npm run db:backfill-assets`.
 - Si no tienes datos historicos en filesystem, `storage/` y `tmp/` no forman parte del despliegue productivo.
+- Si un despliegue queda mezclado o bloqueado por permisos, usa una carpeta nueva (`la-dental-app-v2`, `v3`, `v4`, `v5`, etc.) y cambia el `Working directory` del sitio.
+- Si AlwaysData muestra `Connection to upstream failed`, revisa los logs del sitio y confirma que realmente exista un proceso `node server.js`.
 
 ## Endpoints principales
 
@@ -151,6 +220,15 @@ AlwaysData exige que la app escuche exactamente en el `IP` y `PORT` asignados al
 - `GET /api/me`
 - `PATCH /api/me`
 - `DELETE /api/me`
+- `GET /api/feed`
+- `POST /api/feed`
+- `GET /api/appointments`
+- `POST /api/appointments`
+- `PATCH /api/appointments`
+- `GET /api/messages`
+- `POST /api/messages`
+- `GET /api/clinical-records`
+- `POST /api/clinical-records`
 - `GET /api/doctor/services`
 - `POST /api/doctor/services`
 - `PATCH /api/doctor/services`
@@ -181,5 +259,5 @@ AlwaysData exige que la app escuche exactamente en el `IP` y `PORT` asignados al
 ## Notas de alcance
 
 - No hay panel admin en esta fase.
-- Agenda, mensajes e historial clinico avanzado siguen fuera de persistencia MySQL.
+- La V2 ya incluye persistencia para feed, agenda, mensajes e historial clinico.
 - La UI publica usa el lenguaje del producto, pero internamente los permisos trabajan con solo 2 roles reales: `paciente` y `doctor`.

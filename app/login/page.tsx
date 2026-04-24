@@ -15,12 +15,12 @@ export default async function LoginPage() {
       <ScreenShell
         eyebrow="Acceso"
         title="Inicia sesion en L&A Dental"
-        description="Entra con correo y contrasena para llegar directo a tu dashboard de paciente o doctor."
+        description="Entra con correo y contrasena para llegar directo a tu feed, agenda, mensajes e historial por rol."
       >
         <LoginForm />
-        <p className="mt-5 text-center text-sm text-white/55">
+        <p className="mt-5 text-center text-sm text-[var(--text-soft)]">
           Si aun no tienes cuenta,{" "}
-          <Link href="/registro" className="font-bold text-violet-100">
+          <Link href="/registro" className="font-bold text-[var(--violet-main)]">
             registrate aqui
           </Link>
           .

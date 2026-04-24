@@ -10,11 +10,11 @@ type PrimaryButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const variants = {
   primary:
-    "bg-violet-electric text-white shadow-aura hover:bg-violet-glow active:scale-[0.98]",
+    "bg-[linear-gradient(135deg,var(--violet-main),var(--violet-glow))] text-white shadow-[0_16px_40px_rgba(124,76,194,0.24)] hover:brightness-105 active:scale-[0.98]",
   secondary:
-    "border border-violet-300/30 bg-violet-300/12 text-violet-100 hover:bg-violet-300/18 active:scale-[0.98]",
+    "border border-[rgba(124,76,194,0.18)] bg-[rgba(124,76,194,0.08)] text-[var(--violet-deep)] hover:bg-[rgba(124,76,194,0.12)] active:scale-[0.98]",
   ghost:
-    "border border-white/10 bg-white/[0.06] text-white hover:bg-white/[0.1] active:scale-[0.98]"
+    "border border-[rgba(105,73,150,0.12)] bg-white/65 text-[var(--text)] hover:bg-white active:scale-[0.98]"
 };
 
 export function buttonClasses(

@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { AppExperienceShell } from "@/components/ui/AppExperienceShell";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -8,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#07050D",
+  themeColor: "#f6f1fb",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1
@@ -21,7 +22,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es">
-      <body className="min-h-screen bg-ink text-white antialiased">{children}</body>
+      <body className="page-shell min-h-screen bg-[var(--bg)] text-[var(--text)] antialiased">
+        <AppExperienceShell>{children}</AppExperienceShell>
+      </body>
     </html>
   );
 }

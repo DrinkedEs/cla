@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
+import { BrandLogo } from "@/components/brand/BrandLogo";
 import { TextInput } from "@/components/ui/FormField";
 import { PrimaryButton } from "@/components/ui/PrimaryButton";
 import { Surface } from "@/components/ui/Surface";
@@ -41,11 +42,19 @@ export function LoginForm() {
   }
 
   return (
-    <Surface className="mx-auto w-full max-w-xl">
-      <form
-        action={handleSubmit}
-        className="grid gap-4"
-      >
+    <Surface className="mx-auto w-full max-w-xl overflow-hidden p-6 sm:p-8">
+      <div className="mb-6 flex items-center gap-4">
+        <BrandLogo size="md" animated />
+        <div>
+          <p className="text-xs font-bold uppercase tracking-[0.24em] text-[var(--violet-main)]">
+            Acceso seguro
+          </p>
+          <p className="mt-1 text-sm text-[var(--text-soft)]">
+            Entra a tu feed, agenda y mensajes en segundos.
+          </p>
+        </div>
+      </div>
+      <form action={handleSubmit} className="grid gap-4">
         <TextInput
           label="Correo"
           name="email"

@@ -15,18 +15,18 @@ type FieldShellProps = {
 function FieldShell({ label, hint, error, children }: FieldShellProps) {
   return (
     <label className="grid gap-2">
-      <span className="text-xs font-bold uppercase tracking-[0.18em] text-white/45">
+      <span className="text-xs font-bold uppercase tracking-[0.18em] text-[var(--text-soft)]">
         {label}
       </span>
       {children}
-      {hint ? <span className="text-xs text-white/38">{hint}</span> : null}
+      {hint ? <span className="text-xs text-[var(--text-soft)]/85">{hint}</span> : null}
       {error ? <span className="text-xs text-rose">{error}</span> : null}
     </label>
   );
 }
 
 const inputClasses =
-  "min-h-12 w-full rounded-2xl border border-white/10 bg-black/25 px-4 text-sm font-medium text-white outline-none transition placeholder:text-white/28 focus:border-violet-300/40";
+  "min-h-12 w-full rounded-2xl border border-[rgba(105,73,150,0.12)] bg-white/80 px-4 text-sm font-medium text-[var(--text)] outline-none transition placeholder:text-[rgba(93,80,122,0.46)] focus:border-[rgba(124,76,194,0.4)]";
 
 type TextInputProps = InputHTMLAttributes<HTMLInputElement> & {
   label: string;

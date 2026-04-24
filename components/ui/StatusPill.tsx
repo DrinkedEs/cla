@@ -8,10 +8,10 @@ type StatusPillProps = {
 export type StatusTone = "violet" | "mint" | "rose" | "muted";
 
 const tones = {
-  violet: "border-violet-300/20 bg-violet-300/12 text-violet-100",
-  mint: "border-mint/20 bg-mint/10 text-mint",
-  rose: "border-rose/20 bg-rose/10 text-rose",
-  muted: "border-white/10 bg-white/[0.06] text-white/65"
+  violet: "border-[rgba(124,76,194,0.18)] bg-[rgba(124,76,194,0.08)] text-[var(--violet-deep)]",
+  mint: "border-[rgba(69,172,154,0.16)] bg-[rgba(98,215,188,0.14)] text-[#177d6d]",
+  rose: "border-[rgba(236,102,148,0.18)] bg-[rgba(255,228,239,0.7)] text-[#c44c7a]",
+  muted: "border-[rgba(105,73,150,0.12)] bg-white/65 text-[var(--text-soft)]"
 };
 
 export function StatusPill({ children, tone = "violet" }: StatusPillProps) {

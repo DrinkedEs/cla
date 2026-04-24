@@ -105,6 +105,46 @@ export const doctorPhotoDeleteSchema = z.object({
   photoId: z.coerce.number().int().positive("Foto invalida.")
 });
 
+export const feedPostSchema = z.object({
+  headline: z.string().trim().min(4, "Agrega un titulo corto para la publicacion."),
+  body: z.string().trim().min(20, "Comparte una actualizacion un poco mas completa."),
+  topic: z.string().trim().min(3, "Indica el tema de la publicacion."),
+  visibility: z.enum(["public", "patients_only"]).default("public"),
+  featured: z.boolean().optional().default(false)
+});
+
+export const appointmentCreateSchema = z.object({
+  doctorId: z.coerce.number().int().positive("Doctor invalido."),
+  treatmentTitle: z.string().trim().min(3, "Selecciona un tratamiento."),
+  notes: z.string().trim().min(6, "Agrega una nota breve para tu cita."),
+  scheduledFor: z.string().trim().min(10, "Selecciona una fecha y hora validas.")
+});
+
+export const appointmentStatusSchema = z.object({
+  appointmentId: z.coerce.number().int().positive("Cita invalida."),
+  status: z.enum(["pending", "confirmed", "completed", "cancelled", "in_review"]),
+  note: z.string().trim().max(255).optional().default("")
+});
+
+export const messageSendSchema = z.object({
+  conversationId: z.coerce.number().int().positive("Conversacion invalida."),
+  body: z.string().trim().min(1, "Escribe un mensaje.")
+});
+
+export const clinicalRecordCreateSchema = z.object({
+  patientId: z.coerce.number().int().positive("Paciente invalido."),
+  title: z.string().trim().min(4, "Agrega un titulo para el expediente."),
+  diagnosis: z.string().trim().min(10, "Describe el diagnostico."),
+  treatmentPlan: z.string().trim().min(10, "Describe el plan de tratamiento."),
+  status: z.enum(["active", "completed", "follow_up"]).default("active")
+});
+
+export const clinicalEntryCreateSchema = z.object({
+  recordId: z.coerce.number().int().positive("Expediente invalido."),
+  note: z.string().trim().min(8, "Agrega una nota clinica mas completa."),
+  entryType: z.enum(["assessment", "progress", "prescription", "follow_up"])
+});
+
 export function requirePdf(file: FormDataEntryValue | null) {
   if (!(file instanceof File) || file.size === 0) {
     throw new Error("El CV en PDF es obligatorio.");

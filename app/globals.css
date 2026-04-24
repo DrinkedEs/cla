@@ -3,9 +3,20 @@
 @tailwind utilities;
 
 :root {
-  color-scheme: dark;
-  background: #07050d;
-  color: #f8f7ff;
+  color-scheme: light;
+  --bg: #f6f1fb;
+  --bg-soft: #fcfaff;
+  --surface: rgba(255, 255, 255, 0.82);
+  --surface-strong: rgba(255, 255, 255, 0.94);
+  --surface-border: rgba(105, 73, 150, 0.12);
+  --text: #24153f;
+  --text-soft: #6f6488;
+  --violet-deep: #4f2f7a;
+  --violet-main: #7c4cc2;
+  --violet-glow: #a070e7;
+  --violet-soft: #efe5ff;
+  --mint-soft: #e7f8f6;
+  --rose-soft: #ffe7ef;
 }
 
 * {
@@ -19,12 +30,23 @@ html {
 body {
   min-height: 100vh;
   margin: 0;
+  color: var(--text);
+  font-family:
+    "DM Sans",
+    "Segoe UI",
+    ui-sans-serif,
+    system-ui,
+    sans-serif;
   background:
-    radial-gradient(circle at 20% 0%, rgba(168, 85, 247, 0.18), transparent 28rem),
-    radial-gradient(circle at 88% 18%, rgba(105, 240, 215, 0.08), transparent 24rem),
-    #07050d;
-  color: #f8f7ff;
-  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+    radial-gradient(circle at top left, rgba(160, 112, 231, 0.16), transparent 30rem),
+    radial-gradient(circle at top right, rgba(104, 74, 150, 0.12), transparent 34rem),
+    radial-gradient(circle at bottom left, rgba(255, 255, 255, 0.7), transparent 24rem),
+    linear-gradient(180deg, #fcf8ff 0%, #f4edf9 43%, #f6f1fb 100%);
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
 }
 
 button,
@@ -38,6 +60,11 @@ button {
   -webkit-tap-highlight-color: transparent;
 }
 
+input::placeholder,
+textarea::placeholder {
+  color: rgba(93, 80, 122, 0.46);
+}
+
 .hide-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -45,4 +72,119 @@ button {
 
 .hide-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+.glass-panel {
+  border-radius: 30px;
+  border: 1px solid var(--surface-border);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(248, 242, 255, 0.74));
+  box-shadow:
+    0 24px 80px rgba(89, 58, 140, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(22px);
+}
+
+.page-shell {
+  position: relative;
+}
+
+.page-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 16% 12%, rgba(160, 112, 231, 0.11), transparent 20rem),
+    radial-gradient(circle at 84% 10%, rgba(90, 56, 141, 0.09), transparent 22rem),
+    radial-gradient(circle at 50% 100%, rgba(255, 255, 255, 0.65), transparent 28rem);
+  z-index: -1;
+}
+
+.brand-logo-float {
+  animation: brandFloat 2.8s ease-in-out infinite;
+}
+
+.tooth-loader {
+  animation: toothGlow 1.8s ease-in-out infinite;
+}
+
+.brush-loader {
+  transform-origin: left center;
+  animation: brushSwipe 1.35s ease-in-out infinite;
+}
+
+.brush-head-loader {
+  animation: foamPulse 1.35s ease-in-out infinite;
+}
+
+.pulse-ring {
+  animation: pulseRing 1.8s ease-in-out infinite;
+}
+
+@keyframes brandFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
+}
+
+@keyframes toothGlow {
+  0%,
+  100% {
+    box-shadow: 0 0 0 rgba(124, 76, 194, 0.16);
+  }
+  50% {
+    box-shadow: 0 0 28px rgba(124, 76, 194, 0.18);
+  }
+}
+
+@keyframes brushSwipe {
+  0%,
+  100% {
+    transform: translateX(-10px) rotate(-12deg);
+  }
+  50% {
+    transform: translateX(6px) rotate(9deg);
+  }
+}
+
+@keyframes foamPulse {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(0.9);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+@keyframes pulseRing {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(1.06);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

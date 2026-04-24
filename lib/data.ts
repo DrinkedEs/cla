@@ -9,10 +9,19 @@ import {
 import { apiError } from "@/lib/http";
 import { slugify } from "@/lib/slug";
 import type {
+  ActivitySummary,
+  Appointment,
+  AppointmentStatus,
+  ClinicalRecord,
+  ClinicalRecordEntry,
+  ConversationPreview,
+  DirectMessage,
   DoctorAccount,
   DoctorDashboardData,
   DoctorPhoto,
   DoctorService,
+  FeedPost,
+  FeedVisibility,
   PatientAccount,
   PatientDashboardData,
   PublicDoctor,
@@ -101,12 +110,94 @@ type PublicServiceRow = RowDataPacket & {
   photo_asset_id: number | null;
 };
 
+type FeedPostRow = RowDataPacket & {
+  id: number;
+  doctor_id: number;
+  doctor_name: string;
+  doctor_slug: string;
+  doctor_title: string;
+  doctor_university: string;
+  doctor_semester: string;
+  doctor_photo_asset_id: number | null;
+  headline: string;
+  body: string;
+  topic: string;
+  visibility: FeedVisibility;
+  is_featured: 0 | 1;
+  reaction_count: number;
+  created_at: Date | string;
+};
+
+type AppointmentRow = RowDataPacket & {
+  id: number;
+  patient_id: number;
+  patient_name: string;
+  doctor_id: number;
+  doctor_name: string;
+  doctor_slug: string;
+  treatment_title: string;
+  notes: string;
+  status: AppointmentStatus;
+  scheduled_for: Date | string;
+  created_at: Date | string;
+};
+
+type ConversationPreviewRow = RowDataPacket & {
+  conversation_id: number;
+  counterpart_name: string;
+  counterpart_role: Role;
+  counterpart_slug: string | null;
+  last_message: string | null;
+  last_message_at: Date | string | null;
+  unread_count: number;
+};
+
+type MessageRow = RowDataPacket & {
+  id: number;
+  conversation_id: number;
+  sender_id: number;
+  sender_name: string;
+  body: string;
+  created_at: Date | string;
+};
+
+type ClinicalRecordRow = RowDataPacket & {
+  id: number;
+  patient_id: number;
+  patient_name: string;
+  doctor_id: number;
+  doctor_name: string;
+  title: string;
+  diagnosis: string;
+  treatment_plan: string;
+  status: "active" | "completed" | "follow_up";
+  created_at: Date | string;
+  updated_at: Date | string;
+};
+
+type ClinicalRecordEntryRow = RowDataPacket & {
+  id: number;
+  record_id: number;
+  note: string;
+  entry_type: "assessment" | "progress" | "prescription" | "follow_up";
+  created_at: Date | string;
+  author_name: string;
+};
+
 function formatDateInput(value: Date | string) {
   if (value instanceof Date) {
     return value.toISOString().slice(0, 10);
   }
 
   return value.slice(0, 10);
+}
+
+function formatDateTime(value: Date | string) {
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+
+  return new Date(value).toISOString();
 }
 
 function mapDoctorPhoto(row: DoctorPhotoRow): DoctorPhoto {
@@ -160,6 +251,140 @@ function mapPublicService(row: PublicServiceRow): PublicService {
     doctorBio: row.doctor_bio,
     photoUrl: buildMediaUrl(row.photo_asset_id)
   };
+}
+
+function mapFeedPost(row: FeedPostRow): FeedPost {
+  return {
+    id: row.id,
+    doctorId: row.doctor_id,
+    doctorName: row.doctor_name,
+    doctorSlug: row.doctor_slug,
+    doctorTitle: row.doctor_title,
+    doctorUniversity: row.doctor_university,
+    doctorSemester: row.doctor_semester,
+    doctorPhotoUrl: buildMediaUrl(row.doctor_photo_asset_id),
+    headline: row.headline,
+    body: row.body,
+    topic: row.topic,
+    visibility: row.visibility,
+    featured: Boolean(row.is_featured),
+    reactionCount: Number(row.reaction_count ?? 0),
+    createdAt: formatDateTime(row.created_at)
+  };
+}
+
+function mapAppointment(row: AppointmentRow): Appointment {
+  return {
+    id: row.id,
+    patientId: row.patient_id,
+    patientName: row.patient_name,
+    doctorId: row.doctor_id,
+    doctorName: row.doctor_name,
+    doctorSlug: row.doctor_slug,
+    treatmentTitle: row.treatment_title,
+    notes: row.notes,
+    status: row.status,
+    scheduledFor: formatDateTime(row.scheduled_for),
+    createdAt: formatDateTime(row.created_at)
+  };
+}
+
+function mapConversationPreview(row: ConversationPreviewRow): ConversationPreview {
+  return {
+    conversationId: row.conversation_id,
+    counterpartName: row.counterpart_name,
+    counterpartRole: row.counterpart_role,
+    counterpartSlug: row.counterpart_slug,
+    lastMessage: row.last_message ?? "Sin mensajes todavia.",
+    lastMessageAt: row.last_message_at ? formatDateTime(row.last_message_at) : new Date(0).toISOString(),
+    unreadCount: Number(row.unread_count ?? 0)
+  };
+}
+
+function mapMessage(row: MessageRow, currentUserId: number): DirectMessage {
+  return {
+    id: row.id,
+    conversationId: row.conversation_id,
+    senderId: row.sender_id,
+    senderName: row.sender_name,
+    body: row.body,
+    createdAt: formatDateTime(row.created_at),
+    isOwn: row.sender_id === currentUserId
+  };
+}
+
+function mapClinicalRecord(row: ClinicalRecordRow): ClinicalRecord {
+  return {
+    id: row.id,
+    patientId: row.patient_id,
+    patientName: row.patient_name,
+    doctorId: row.doctor_id,
+    doctorName: row.doctor_name,
+    title: row.title,
+    diagnosis: row.diagnosis,
+    treatmentPlan: row.treatment_plan,
+    status: row.status,
+    createdAt: formatDateTime(row.created_at),
+    updatedAt: formatDateTime(row.updated_at)
+  };
+}
+
+function mapClinicalEntry(row: ClinicalRecordEntryRow): ClinicalRecordEntry {
+  return {
+    id: row.id,
+    recordId: row.record_id,
+    note: row.note,
+    entryType: row.entry_type,
+    createdAt: formatDateTime(row.created_at),
+    authorName: row.author_name
+  };
+}
+
+function buildActivitySummary(userRole: Role, counts: {
+  feed: number;
+  appointments: number;
+  conversations: number;
+  records: number;
+  services?: number;
+  photos?: number;
+}): ActivitySummary[] {
+  const items: ActivitySummary[] = [
+    {
+      title: "Publicaciones",
+      value: String(counts.feed),
+      description: "Actualizaciones visibles para dar vida al feed clinico."
+    },
+    {
+      title: "Citas activas",
+      value: String(counts.appointments),
+      description: "Agenda en movimiento con estados y seguimiento."
+    },
+    {
+      title: "Mensajes",
+      value: String(counts.conversations),
+      description: "Conversaciones abiertas entre pacientes y doctores."
+    },
+    {
+      title: "Expedientes",
+      value: String(counts.records),
+      description: "Historial clinico persistente para seguimiento."
+    }
+  ];
+
+  if (userRole === "doctor") {
+    items.unshift({
+      title: "Servicios",
+      value: String(counts.services ?? 0),
+      description: "Tratamientos activos y visibles en tu perfil."
+    });
+    items.push({
+      title: "Galeria",
+      value: String(counts.photos ?? 0),
+      description: "Fotos profesionales para reforzar confianza."
+    });
+  }
+
+  return items;
 }
 
 async function ensureEmailAvailable(
@@ -227,6 +452,35 @@ async function getDoctorProfileRecordByUserId(userId: number) {
     `,
     [userId]
   );
+}
+
+async function ensureConversationBetween(
+  connection: PoolConnection,
+  doctorId: number,
+  patientId: number
+) {
+  const [rows] = await connection.query<RowDataPacket[]>(
+    "SELECT id FROM conversations WHERE doctor_id = ? AND patient_id = ? LIMIT 1",
+    [doctorId, patientId]
+  );
+
+  if (rows[0]?.id) {
+    return Number(rows[0].id);
+  }
+
+  const [result] = await connection.query<ResultSetHeader>(
+    "INSERT INTO conversations (doctor_id, patient_id) VALUES (?, ?)",
+    [doctorId, patientId]
+  );
+
+  const conversationId = result.insertId;
+
+  await connection.query(
+    "INSERT INTO conversation_members (conversation_id, user_id, role) VALUES (?, ?, 'doctor'), (?, ?, 'paciente')",
+    [conversationId, doctorId, conversationId, patientId]
+  );
+
+  return conversationId;
 }
 
 export async function getPublicStats() {
@@ -361,6 +615,51 @@ export async function searchPublicServices({
   return rows.map(mapPublicService);
 }
 
+export async function getPublicFeed(limit = 8) {
+  const [rows] = await db.query<FeedPostRow[]>(
+    `
+      SELECT
+        p.id,
+        p.doctor_id,
+        dp.full_name AS doctor_name,
+        dp.public_slug AS doctor_slug,
+        dp.display_title AS doctor_title,
+        dp.university AS doctor_university,
+        dp.semester AS doctor_semester,
+        (
+          SELECT photo.asset_id
+          FROM doctor_photos photo
+          WHERE photo.doctor_id = p.doctor_id
+            AND photo.asset_id IS NOT NULL
+          ORDER BY photo.sort_order ASC, photo.id ASC
+          LIMIT 1
+        ) AS doctor_photo_asset_id,
+        p.headline,
+        p.body,
+        p.topic,
+        p.visibility,
+        p.is_featured,
+        (
+          SELECT COUNT(*)
+          FROM post_reactions pr
+          WHERE pr.post_id = p.id
+        ) AS reaction_count,
+        p.created_at
+      FROM doctor_posts p
+      INNER JOIN users u ON u.id = p.doctor_id
+      INNER JOIN doctor_profiles dp ON dp.user_id = p.doctor_id
+      WHERE u.status = 'active'
+        AND u.deleted_at IS NULL
+        AND p.visibility = 'public'
+      ORDER BY p.is_featured DESC, p.created_at DESC
+      LIMIT ?
+    `,
+    [limit]
+  );
+
+  return rows.map(mapFeedPost);
+}
+
 export async function getDoctorProfileBySlug(slug: string) {
   const doctor = await queryOne<DoctorProfileRow>(
     `
@@ -393,7 +692,7 @@ export async function getDoctorProfileBySlug(slug: string) {
     return null;
   }
 
-  const [servicesRows, photoRows] = await Promise.all([
+  const [servicesRows, photoRows, feedRows] = await Promise.all([
     db.query<DoctorServiceRow[]>(
       `
         SELECT id, title, category, description, price_mxn, duration_minutes, is_active
@@ -412,6 +711,44 @@ export async function getDoctorProfileBySlug(slug: string) {
         ORDER BY sort_order ASC, id ASC
       `,
       [doctor.id]
+    ),
+    db.query<FeedPostRow[]>(
+      `
+        SELECT
+          p.id,
+          p.doctor_id,
+          dp.full_name AS doctor_name,
+          dp.public_slug AS doctor_slug,
+          dp.display_title AS doctor_title,
+          dp.university AS doctor_university,
+          dp.semester AS doctor_semester,
+          (
+            SELECT photo.asset_id
+            FROM doctor_photos photo
+            WHERE photo.doctor_id = p.doctor_id
+              AND photo.asset_id IS NOT NULL
+            ORDER BY photo.sort_order ASC, photo.id ASC
+            LIMIT 1
+          ) AS doctor_photo_asset_id,
+          p.headline,
+          p.body,
+          p.topic,
+          p.visibility,
+          p.is_featured,
+          (
+            SELECT COUNT(*)
+            FROM post_reactions pr
+            WHERE pr.post_id = p.id
+          ) AS reaction_count,
+          p.created_at
+        FROM doctor_posts p
+        INNER JOIN doctor_profiles dp ON dp.user_id = p.doctor_id
+        WHERE p.doctor_id = ?
+          AND p.visibility = 'public'
+        ORDER BY p.created_at DESC
+        LIMIT 6
+      `,
+      [doctor.id]
     )
   ]);
 
@@ -427,7 +764,8 @@ export async function getDoctorProfileBySlug(slug: string) {
     phone: doctor.phone,
     cvUrl: buildMediaUrl(doctor.cv_asset_id),
     services: servicesRows[0].map(mapDoctorService),
-    photos: photoRows[0].map(mapDoctorPhoto)
+    photos: photoRows[0].map(mapDoctorPhoto),
+    feed: feedRows[0].map(mapFeedPost)
   } satisfies PublicDoctorProfile;
 }
 
@@ -578,6 +916,26 @@ export async function createDoctorAccount(input: {
       ]
     );
 
+    await connection.query(
+      `
+        INSERT INTO doctor_posts (
+          doctor_id,
+          headline,
+          body,
+          topic,
+          visibility,
+          is_featured
+        )
+        VALUES (?, ?, ?, ?, 'public', 1)
+      `,
+      [
+        userId,
+        "Bienvenido a mi perfil profesional",
+        `Hola, soy ${input.fullName}. Aqui compartire avances clinicos, recomendaciones y nuevos espacios de agenda para mis pacientes.`,
+        "Presentacion"
+      ]
+    );
+
     return userId;
   });
 }
@@ -676,6 +1034,203 @@ export async function getDoctorAccountByUserId(userId: number) {
   } satisfies DoctorAccount;
 }
 
+export async function getAppointmentsForUser(user: SessionUser) {
+  const [rows] = await db.query<AppointmentRow[]>(
+    `
+      SELECT
+        a.id,
+        a.patient_id,
+        pp.full_name AS patient_name,
+        a.doctor_id,
+        dp.full_name AS doctor_name,
+        dp.public_slug AS doctor_slug,
+        a.treatment_title,
+        a.notes,
+        a.status,
+        a.scheduled_for,
+        a.created_at
+      FROM appointments a
+      INNER JOIN patient_profiles pp ON pp.user_id = a.patient_id
+      INNER JOIN doctor_profiles dp ON dp.user_id = a.doctor_id
+      WHERE ${user.role === "doctor" ? "a.doctor_id" : "a.patient_id"} = ?
+      ORDER BY a.scheduled_for ASC
+      LIMIT 8
+    `,
+    [user.id]
+  );
+
+  return rows.map(mapAppointment);
+}
+
+export async function getFeedForUser(user: SessionUser) {
+  const [rows] = await db.query<FeedPostRow[]>(
+    `
+      SELECT
+        p.id,
+        p.doctor_id,
+        dp.full_name AS doctor_name,
+        dp.public_slug AS doctor_slug,
+        dp.display_title AS doctor_title,
+        dp.university AS doctor_university,
+        dp.semester AS doctor_semester,
+        (
+          SELECT photo.asset_id
+          FROM doctor_photos photo
+          WHERE photo.doctor_id = p.doctor_id
+            AND photo.asset_id IS NOT NULL
+          ORDER BY photo.sort_order ASC, photo.id ASC
+          LIMIT 1
+        ) AS doctor_photo_asset_id,
+        p.headline,
+        p.body,
+        p.topic,
+        p.visibility,
+        p.is_featured,
+        (
+          SELECT COUNT(*)
+          FROM post_reactions pr
+          WHERE pr.post_id = p.id
+        ) AS reaction_count,
+        p.created_at
+      FROM doctor_posts p
+      INNER JOIN users u ON u.id = p.doctor_id
+      INNER JOIN doctor_profiles dp ON dp.user_id = p.doctor_id
+      WHERE u.status = 'active'
+        AND u.deleted_at IS NULL
+        AND (? = 'doctor' OR p.visibility IN ('public', 'patients_only'))
+      ORDER BY
+        CASE WHEN p.doctor_id = ? THEN 0 ELSE 1 END,
+        p.is_featured DESC,
+        p.created_at DESC
+      LIMIT 12
+    `,
+    [user.role, user.id]
+  );
+
+  return rows.map(mapFeedPost);
+}
+
+export async function getConversationsForUser(user: SessionUser) {
+  const [rows] = await db.query<ConversationPreviewRow[]>(
+    `
+      SELECT
+        c.id AS conversation_id,
+        ${user.role === "doctor" ? "pp.full_name" : "dp.full_name"} AS counterpart_name,
+        ${user.role === "doctor" ? "'paciente'" : "'doctor'"} AS counterpart_role,
+        ${user.role === "doctor" ? "NULL" : "dp.public_slug"} AS counterpart_slug,
+        (
+          SELECT m.body
+          FROM messages m
+          WHERE m.conversation_id = c.id
+          ORDER BY m.created_at DESC, m.id DESC
+          LIMIT 1
+        ) AS last_message,
+        (
+          SELECT m.created_at
+          FROM messages m
+          WHERE m.conversation_id = c.id
+          ORDER BY m.created_at DESC, m.id DESC
+          LIMIT 1
+        ) AS last_message_at,
+        0 AS unread_count
+      FROM conversations c
+      INNER JOIN patient_profiles pp ON pp.user_id = c.patient_id
+      INNER JOIN doctor_profiles dp ON dp.user_id = c.doctor_id
+      WHERE ${user.role === "doctor" ? "c.doctor_id" : "c.patient_id"} = ?
+      ORDER BY COALESCE(last_message_at, c.updated_at) DESC
+      LIMIT 8
+    `,
+    [user.id]
+  );
+
+  return rows.map(mapConversationPreview);
+}
+
+export async function getMessagesForUser(user: SessionUser, conversationId?: number | null) {
+  const conversations = await getConversationsForUser(user);
+  const activeConversationId = conversationId ?? conversations[0]?.conversationId ?? null;
+
+  if (!activeConversationId) {
+    return [];
+  }
+
+  const [rows] = await db.query<MessageRow[]>(
+    `
+      SELECT
+        m.id,
+        m.conversation_id,
+        m.sender_id,
+        COALESCE(dp.full_name, pp.full_name, u.email) AS sender_name,
+        m.body,
+        m.created_at
+      FROM messages m
+      INNER JOIN users u ON u.id = m.sender_id
+      LEFT JOIN doctor_profiles dp ON dp.user_id = u.id
+      LEFT JOIN patient_profiles pp ON pp.user_id = u.id
+      INNER JOIN conversation_members cm ON cm.conversation_id = m.conversation_id AND cm.user_id = ?
+      WHERE m.conversation_id = ?
+      ORDER BY m.created_at ASC, m.id ASC
+      LIMIT 50
+    `,
+    [user.id, activeConversationId]
+  );
+
+  return rows.map((row) => mapMessage(row, user.id));
+}
+
+export async function getClinicalRecordsForUser(user: SessionUser) {
+  const [rows] = await db.query<ClinicalRecordRow[]>(
+    `
+      SELECT
+        cr.id,
+        cr.patient_id,
+        pp.full_name AS patient_name,
+        cr.doctor_id,
+        dp.full_name AS doctor_name,
+        cr.title,
+        cr.diagnosis,
+        cr.treatment_plan,
+        cr.status,
+        cr.created_at,
+        cr.updated_at
+      FROM clinical_records cr
+      INNER JOIN patient_profiles pp ON pp.user_id = cr.patient_id
+      INNER JOIN doctor_profiles dp ON dp.user_id = cr.doctor_id
+      WHERE ${user.role === "doctor" ? "cr.doctor_id" : "cr.patient_id"} = ?
+      ORDER BY cr.updated_at DESC
+      LIMIT 8
+    `,
+    [user.id]
+  );
+
+  return rows.map(mapClinicalRecord);
+}
+
+export async function getClinicalEntriesForUser(user: SessionUser) {
+  const [rows] = await db.query<ClinicalRecordEntryRow[]>(
+    `
+      SELECT
+        e.id,
+        e.record_id,
+        e.note,
+        e.entry_type,
+        e.created_at,
+        COALESCE(dp.full_name, pp.full_name, u.email) AS author_name
+      FROM clinical_record_entries e
+      INNER JOIN clinical_records cr ON cr.id = e.record_id
+      INNER JOIN users u ON u.id = e.author_user_id
+      LEFT JOIN doctor_profiles dp ON dp.user_id = u.id
+      LEFT JOIN patient_profiles pp ON pp.user_id = u.id
+      WHERE ${user.role === "doctor" ? "cr.doctor_id" : "cr.patient_id"} = ?
+      ORDER BY e.created_at DESC
+      LIMIT 12
+    `,
+    [user.id]
+  );
+
+  return rows.map(mapClinicalEntry);
+}
+
 export async function getDashboardData(user: SessionUser) {
   if (user.role === "paciente") {
     return getPatientDashboardData(user.id);
@@ -691,15 +1246,42 @@ export async function getPatientDashboardData(userId: number) {
     return null;
   }
 
-  const [featuredDoctors, featuredServices] = await Promise.all([
-    getFeaturedDoctors(3),
-    searchPublicServices()
-  ]);
+  const sessionUser: SessionUser = {
+    id: account.id,
+    role: account.role,
+    email: account.email,
+    phone: account.phone,
+    status: account.status
+  };
+
+  const [featuredDoctors, featuredServices, feed, appointments, conversations, clinicalRecords, clinicalEntries] =
+    await Promise.all([
+      getFeaturedDoctors(4),
+      searchPublicServices(),
+      getFeedForUser(sessionUser),
+      getAppointmentsForUser(sessionUser),
+      getConversationsForUser(sessionUser),
+      getClinicalRecordsForUser(sessionUser),
+      getClinicalEntriesForUser(sessionUser)
+    ]);
+  const messages = await getMessagesForUser(sessionUser, conversations[0]?.conversationId ?? null);
 
   return {
     account,
     featuredDoctors,
-    featuredServices: featuredServices.slice(0, 4)
+    featuredServices: featuredServices.slice(0, 6),
+    feed,
+    appointments,
+    conversations,
+    messages,
+    clinicalRecords,
+    clinicalEntries,
+    activitySummary: buildActivitySummary("paciente", {
+      feed: feed.length,
+      appointments: appointments.length,
+      conversations: conversations.length,
+      records: clinicalRecords.length
+    })
   } satisfies PatientDashboardData;
 }
 
@@ -710,12 +1292,43 @@ export async function getDoctorDashboardData(userId: number) {
     return null;
   }
 
+  const sessionUser: SessionUser = {
+    id: account.id,
+    role: account.role,
+    email: account.email,
+    phone: account.phone,
+    status: account.status
+  };
+
+  const [feed, appointments, conversations, clinicalRecords, clinicalEntries] = await Promise.all([
+    getFeedForUser(sessionUser),
+    getAppointmentsForUser(sessionUser),
+    getConversationsForUser(sessionUser),
+    getClinicalRecordsForUser(sessionUser),
+    getClinicalEntriesForUser(sessionUser)
+  ]);
+  const messages = await getMessagesForUser(sessionUser, conversations[0]?.conversationId ?? null);
+
   return {
     account,
     stats: {
       activeServices: account.services.filter((service) => service.isActive).length,
       galleryPhotos: account.photos.length
-    }
+    },
+    feed,
+    appointments,
+    conversations,
+    messages,
+    clinicalRecords,
+    clinicalEntries,
+    activitySummary: buildActivitySummary("doctor", {
+      feed: feed.length,
+      appointments: appointments.length,
+      conversations: conversations.length,
+      records: clinicalRecords.length,
+      services: account.services.filter((service) => service.isActive).length,
+      photos: account.photos.length
+    })
   } satisfies DoctorDashboardData;
 }
 
@@ -1009,6 +1622,255 @@ export async function deleteDoctorPhoto(userId: number, photoId: number) {
   return {
     photos: account?.photos ?? []
   };
+}
+
+export async function createFeedPost(
+  doctorId: number,
+  input: {
+    headline: string;
+    body: string;
+    topic: string;
+    visibility: FeedVisibility;
+    featured?: boolean;
+  }
+) {
+  await db.query(
+    `
+      INSERT INTO doctor_posts (doctor_id, headline, body, topic, visibility, is_featured)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `,
+    [doctorId, input.headline, input.body, input.topic, input.visibility, input.featured ?? false]
+  );
+
+  return getFeedForUser({
+    id: doctorId,
+    role: "doctor",
+    email: "",
+    phone: "",
+    status: "active"
+  });
+}
+
+export async function createAppointmentForPatient(
+  patientId: number,
+  input: {
+    doctorId: number;
+    treatmentTitle: string;
+    notes: string;
+    scheduledFor: string;
+  }
+) {
+  return withTransaction(async (connection) => {
+    const [result] = await connection.query<ResultSetHeader>(
+      `
+        INSERT INTO appointments (patient_id, doctor_id, treatment_title, notes, scheduled_for)
+        VALUES (?, ?, ?, ?, ?)
+      `,
+      [patientId, input.doctorId, input.treatmentTitle, input.notes, input.scheduledFor]
+    );
+
+    await connection.query(
+      `
+        INSERT INTO appointment_status_history (
+          appointment_id,
+          changed_by_user_id,
+          status,
+          note
+        )
+        VALUES (?, ?, 'pending', 'Cita creada por el paciente')
+      `,
+      [result.insertId, patientId]
+    );
+
+    const conversationId = await ensureConversationBetween(connection, input.doctorId, patientId);
+
+    await connection.query(
+      "INSERT INTO messages (conversation_id, sender_id, body) VALUES (?, ?, ?)",
+      [
+        conversationId,
+        patientId,
+        `Hola, acabo de solicitar una cita para ${input.treatmentTitle} y la programe para ${input.scheduledFor}.`
+      ]
+    );
+
+    return result.insertId;
+  });
+}
+
+export async function updateAppointmentStatus(
+  user: SessionUser,
+  input: {
+    appointmentId: number;
+    status: AppointmentStatus;
+    note?: string;
+  }
+) {
+  return withTransaction(async (connection) => {
+    const [rows] = await connection.query<RowDataPacket[]>(
+      `
+        SELECT id, patient_id, doctor_id
+        FROM appointments
+        WHERE id = ?
+          AND (${user.role === "doctor" ? "doctor_id" : "patient_id"} = ?)
+        LIMIT 1
+      `,
+      [input.appointmentId, user.id]
+    );
+
+    const appointment = rows[0];
+
+    if (!appointment) {
+      apiError("No encontramos esa cita.", 404);
+    }
+
+    await connection.query(
+      "UPDATE appointments SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+      [input.status, input.appointmentId]
+    );
+
+    await connection.query(
+      `
+        INSERT INTO appointment_status_history (
+          appointment_id,
+          changed_by_user_id,
+          status,
+          note
+        )
+        VALUES (?, ?, ?, ?)
+      `,
+      [input.appointmentId, user.id, input.status, input.note ?? ""]
+    );
+
+    return input.appointmentId;
+  });
+}
+
+export async function sendConversationMessage(
+  user: SessionUser,
+  input: {
+    conversationId: number;
+    body: string;
+  }
+) {
+  const [rows] = await db.query<RowDataPacket[]>(
+    `
+      SELECT 1
+      FROM conversation_members
+      WHERE conversation_id = ? AND user_id = ?
+      LIMIT 1
+    `,
+    [input.conversationId, user.id]
+  );
+
+  if (!rows[0]) {
+    apiError("No tienes acceso a esa conversacion.", 403);
+  }
+
+  await db.query(
+    "INSERT INTO messages (conversation_id, sender_id, body) VALUES (?, ?, ?)",
+    [input.conversationId, user.id, input.body]
+  );
+
+  await db.query(
+    "UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+    [input.conversationId]
+  );
+
+  return getMessagesForUser(user, input.conversationId);
+}
+
+export async function createClinicalRecord(
+  doctorId: number,
+  input: {
+    patientId: number;
+    title: string;
+    diagnosis: string;
+    treatmentPlan: string;
+    status: "active" | "completed" | "follow_up";
+  }
+) {
+  return withTransaction(async (connection) => {
+    const [result] = await connection.query<ResultSetHeader>(
+      `
+        INSERT INTO clinical_records (
+          patient_id,
+          doctor_id,
+          title,
+          diagnosis,
+          treatment_plan,
+          status
+        )
+        VALUES (?, ?, ?, ?, ?, ?)
+      `,
+      [
+        input.patientId,
+        doctorId,
+        input.title,
+        input.diagnosis,
+        input.treatmentPlan,
+        input.status
+      ]
+    );
+
+    await connection.query(
+      `
+        INSERT INTO clinical_record_entries (
+          record_id,
+          author_user_id,
+          entry_type,
+          note
+        )
+        VALUES (?, ?, 'assessment', ?)
+      `,
+      [result.insertId, doctorId, input.diagnosis]
+    );
+
+    return result.insertId;
+  });
+}
+
+export async function addClinicalRecordEntry(
+  user: SessionUser,
+  input: {
+    recordId: number;
+    note: string;
+    entryType: "assessment" | "progress" | "prescription" | "follow_up";
+  }
+) {
+  const [rows] = await db.query<RowDataPacket[]>(
+    `
+      SELECT id
+      FROM clinical_records
+      WHERE id = ?
+        AND (${user.role === "doctor" ? "doctor_id" : "patient_id"} = ?)
+      LIMIT 1
+    `,
+    [input.recordId, user.id]
+  );
+
+  if (!rows[0]) {
+    apiError("No tienes acceso a ese expediente.", 403);
+  }
+
+  await db.query(
+    `
+      INSERT INTO clinical_record_entries (
+        record_id,
+        author_user_id,
+        entry_type,
+        note
+      )
+      VALUES (?, ?, ?, ?)
+    `,
+    [input.recordId, user.id, input.entryType, input.note]
+  );
+
+  await db.query(
+    "UPDATE clinical_records SET updated_at = CURRENT_TIMESTAMP WHERE id = ?",
+    [input.recordId]
+  );
+
+  return getClinicalEntriesForUser(user);
 }
 
 export async function deactivateOwnAccount(userId: number) {

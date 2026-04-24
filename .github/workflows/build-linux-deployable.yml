@@ -1,0 +1,64 @@
+name: Build Linux Deployable
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run lint
+
+      - name: Build Next.js app
+        run: npm run build
+
+      - name: Prepare deploy bundle
+        run: |
+          rm -rf deploy-bundle
+          mkdir -p deploy-bundle
+
+          cp -R app deploy-bundle/app
+          cp -R components deploy-bundle/components
+          cp -R data deploy-bundle/data
+          cp -R database deploy-bundle/database
+          cp -R lib deploy-bundle/lib
+          cp -R public deploy-bundle/public
+          cp -R scripts deploy-bundle/scripts
+          cp -R .next deploy-bundle/.next
+
+          cp package.json deploy-bundle/package.json
+          cp package-lock.json deploy-bundle/package-lock.json
+          cp next.config.ts deploy-bundle/next.config.ts
+          cp next-env.d.ts deploy-bundle/next-env.d.ts
+          cp postcss.config.mjs deploy-bundle/postcss.config.mjs
+          cp tailwind.config.ts deploy-bundle/tailwind.config.ts
+          cp tsconfig.json deploy-bundle/tsconfig.json
+          cp .env.example deploy-bundle/.env.example
+          cp README.md deploy-bundle/README.md
+
+          cd deploy-bundle
+          zip -r ../alwaysdata-deploy-linux.zip .
+
+      - name: Upload deploy artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: alwaysdata-deploy-linux
+          path: alwaysdata-deploy-linux.zip
+          if-no-files-found: error

@@ -1,0 +1,31 @@
+{
+  "name": "la-dental-app",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "tsc --noEmit",
+    "db:init": "node scripts/init-db.mjs",
+    "db:backfill-assets": "node scripts/backfill-assets.mjs"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.4.2",
+    "mysql2": "^3.22.2",
+    "next": "^16.2.4",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "22.15.30",
+    "@types/react": "19.0.12",
+    "@types/react-dom": "19.0.4",
+    "autoprefixer": "10.4.21",
+    "postcss": "8.5.6",
+    "tailwindcss": "3.4.17",
+    "typescript": "5.8.3"
+  }
+}
